@@ -1,7 +1,7 @@
 (ns koza.core
   (:gen-class)
   (:require clojure.zip)
-  (:use [clojure.string]))
+  (:use [clojure.string] [clojure.test]))
 
 (defn generate-tree
     "Generates a genetic-programming individual using the 'grow' method"
@@ -32,14 +32,6 @@
              (recursive-count el)
     ))))
 
-(defn walk-steps
-    [dz steps]
-    (clojure.zip/next dz)
-    (if (= steps 0)
-        dz
-        (recur dz (- steps 1))
-    )
-)
 
 (defn replace-location
     [m w]
@@ -51,18 +43,21 @@
 (defn get-random-subtree
     [z]
     (def walk-len (rand-int (recursive-count z)))
-    (nth 
+    (def st (nth
         (iterate clojure.zip/next z) 
-        man-walk)
+        walk-len))
+    (def st-node (clojure.zip/node st))
+    (if (and (complement (seq? st-node)) (function? st-node))
+            (clojure.zip/up st)
+            st))
 
 (defn crossover
     [man woman]
     (def m-zip (clojure.zip/seq-zip man))
     (def w-zip (clojure.zip/seq-zip woman))
-    (let [mx 
-          wx (nth 
-                    (iterate clojure.zip/next w-zip) 
-                    woman-walk)]
+    (let [mx (get-random-subtree m-zip)
+          wx (get-random-subtree w-zip)]
+        (println (clojure.zip/node mx) (clojure.zip/node wx))
         [(replace-location mx wx) (replace-location wx mx)])
 )
 
@@ -75,7 +70,7 @@
   [& args]
   (def terms '(1 2 3))
   (def tterms (map vector terms (take (count terms) (repeat 0))))
-  (def funcs '((+, 2) (-, 2) (*, 2)))
+  (def funcs '([+ 2] [- 2] [* 2]))
   (def ret (generate-individual tterms funcs 4))
   (println ret)
   (println (first (crossover ret ret)))
