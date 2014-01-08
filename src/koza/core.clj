@@ -65,13 +65,39 @@
     [terms funcs max-depth]
     (generate-tree terms funcs 0 max-depth))
 
+(defn generate-population
+    [terms funcs max-depth size]
+    (take size (repeatedly #(generate-individual terms funcs max-depth))))
+
+(defn evaluate-fitness
+    [fitness-func pop]
+    (for [ind pop]
+         [(fitness-func ind) ind])
+)
+
+(defn eval-bound
+    [ind terms vals]
+    (def bound (seq (conj ['let [terms vals]] ind)))
+    (eval bound))
+
+(defn primary-partial
+    [f & args]
+    (fn [primary] (apply f primary args)))
+
+(defn iterate-population
+    [pop crossover-prob]
+    (def nr-crossover (* crossover-prob (count pop)))
+    (def nr-reproduce (- (count pop) nr-crossover))
+)
 
 (defn -main
   [& args]
-  (def terms '(1 2 3))
+  (def population-size 500)
+  (def generations 51)
+  (def max-depth 6)
+  (def terms '[a])
   (def tterms (map vector terms (take (count terms) (repeat 0))))
   (def funcs '([+ 2] [- 2] [* 2]))
-  (def ret (generate-individual tterms funcs 4))
-  (println ret)
-  (println (first (crossover ret ret)))
+  (def ret (generate-population tterms funcs max-depth population-size))
+  (println (evaluate-fitness (primary-partial eval-bound terms '[1]) ret))
 )
